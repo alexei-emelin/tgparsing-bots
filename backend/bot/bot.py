@@ -5,6 +5,13 @@ import asyncio
 from pyrogram import Client
 
 from config import logger
+from backend.settings import config
+
+
+api_id = config.API_ID
+api_hash = config.API_HASH
+workdir = os.path.join(os.path.dirname(__file__), "sessions")
+phone_number = config.PHONE_NUMBER
 
 
 async def check_account(api_id: int, api_hash: str, session_string: str) -> bool:
