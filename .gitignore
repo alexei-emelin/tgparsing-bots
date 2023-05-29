@@ -162,3 +162,5 @@ cython_debug/
 tgparsing-front/
 db_data/
 requirements-old.txt
+
+*.session
