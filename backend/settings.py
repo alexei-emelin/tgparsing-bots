@@ -18,7 +18,6 @@ class Config(BaseSettings):
     API_ID: int = Field(default=0000)
     API_HASH: str = Field(default='YourTelegramHash')
     PHONE_NUMBER: str = Field(default='+00000000000')
-    SESSION_STRING: str = Field(default="...ZnUIFD8jsjXTb8g_vpxx48k1zkov9sapD-tzjz-S4WZv70M...")
 
 
 config = Config()
