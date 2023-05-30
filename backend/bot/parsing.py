@@ -10,7 +10,7 @@ from pyrogram.raw import functions
 from pyrogram.errors import flood_420
 from pyrogram.errors.exceptions import bad_request_400
 
-from bot.utils.log_func import logger
+from utils.log_func import logger
 
 
 def info_user(user) -> dict:
@@ -27,46 +27,49 @@ def info_user(user) -> dict:
     return info
 
 
-def parser_chat_members_by_subscribes(parsered_chats: typing.List[str],
+async def parser_chat_members_by_subscribes(parsered_chats: typing.List[str],
                                       api_id: int,
                                       api_hash: str,
                                       session_string: str):
-    with Client(':memory:',
-                    api_id,
-                    api_hash,
-                    session_string,
-                    in_memory=True) as client:
-        chat_members = dict()
-        for chat_name in parsered_chats:
-            try:
-                client.get_chat(chat_name)
-                print(client.get_chat(chat_name))
-            except bad_request_400.ChatAdminRequired:
-                parser_private_channel(parsered_chats)
-            except Exception:
-                continue
-            else:
-                # Chat members parsing
-                _chat_members = client.get_chat_members(chat_name)
+    try:
+       async with Client(':memory:',
+                        api_id,
+                        api_hash,
+                        session_string,
+                        in_memory=True) as client:
+            chat_members = dict()
+            for chat_name in parsered_chats:
                 try:
-                    logger.info(f'this is chat members {_chat_members}')
-                    # chat_members = info_user(_chat_members)
-                    for chat_member in _chat_members:
-                        if isinstance(chat_member, types.ChatMember):
-                            if chat_member.status == 'left':
-                                continue
-                            user = chat_member.user
-                        else:
-                            user = chat_member
-                        info = info_user(user)
-                        if user.id not in chat_members:
-                            info['count'] = 1
-                            chat_members[user.id] = info
-                        else:
-                            chat_members[user.id]['count'] += 1
+                    client.get_chat(chat_name)
+                    print(client.get_chat(chat_name))
                 except bad_request_400.ChatAdminRequired:
-                    logger.exception('you cant see this message')
-                    parser_private_channel(parsered_chats, api_id, api_hash, session_string)
+                    parser_private_channel(parsered_chats)
+                except Exception:
+                    continue
+                else:
+                    # Chat members parsing
+                    _chat_members = client.get_chat_members(chat_name)
+                    try:
+                        logger.info(f'this is chat members {_chat_members}')
+                        # chat_members = info_user(_chat_members)
+                        for chat_member in _chat_members:
+                            if isinstance(chat_member, types.ChatMember):
+                                if chat_member.status == 'left':
+                                    continue
+                                user = chat_member.user
+                            else:
+                                user = chat_member
+                            info = info_user(user)
+                            if user.id not in chat_members:
+                                info['count'] = 1
+                                chat_members[user.id] = info
+                            else:
+                                chat_members[user.id]['count'] += 1
+                    except bad_request_400.ChatAdminRequired:
+                        logger.exception('you cant see this message')
+                        parser_private_channel(parsered_chats, api_id, api_hash, session_string)
+    except Exception as ex:
+        logger.exception(f'Ошибка здесь: {ex}')
 
     return chat_members
 
