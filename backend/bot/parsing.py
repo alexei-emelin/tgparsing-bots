@@ -10,7 +10,7 @@ from pyrogram.raw import functions
 from pyrogram.errors import flood_420
 from pyrogram.errors.exceptions import bad_request_400
 
-from bot.utils.log_func import logger
+from utils.log_func import logger
 
 
 def info_user(user) -> dict:
@@ -32,7 +32,7 @@ async def parser_chat_members_by_subscribes(parsered_chats: typing.List[str],
                                       api_hash: str,
                                       session_string: str):
     try:
-        with Client(':memory:',
+       async with Client(':memory:',
                         api_id,
                         api_hash,
                         session_string,

@@ -4,7 +4,7 @@ import asyncio
 
 from pyrogram import Client
 
-from bot.utils.log_func import logger
+from utils.log_func import logger
 from backend.settings import config
 
 

@@ -1,7 +1,7 @@
 from fastapi import APIRouter
-from bot import bot_routes as bot_routes
+from bot.routes import bot_router
 
 
 router = APIRouter()
 
-router.include_router(bot_routes.router, prefix="/bot")
+router.include_router(bot_router, prefix="/bot")
