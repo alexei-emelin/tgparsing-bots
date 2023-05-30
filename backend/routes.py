@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from bot import routes as bot_routes
+from bot import bot_routes as bot_routes
 
 
 router = APIRouter()
