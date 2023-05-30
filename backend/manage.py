@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import click
 
 from settings import config
@@ -28,7 +29,6 @@ def site_group():
     help="Logging level. One of: [critical|error|warning|info|debug|trace]")
 def run(host: str = None, port: int = None, log_level: str = None):
     """Run server"""
-
     import uvicorn
 
     app_name = 'server:app'
