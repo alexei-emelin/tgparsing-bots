@@ -3,7 +3,7 @@ import datetime
 import os
 import time
 import typing
-import traceback
+import json
 
 from pyrogram import Client, types
 from pyrogram.raw import functions
@@ -25,6 +25,20 @@ def info_user(user) -> dict:
         if user.phone_number:
             info['phone_number'] = user.phone_number
     return info
+
+
+def create_result_file(data: typing.Dict):
+    os.makedirs('files', exist_ok=True)
+    timestr = time.strftime("%Y%m%d-%H%M%S")
+    file_name = f'files/{timestr}.json'
+    try:
+        with open(file_name, 'w', encoding='utf-8') as result_file:
+            json.dump(data, result_file, ensure_ascii=False)
+    except Exception as ex:
+        logger.exception(ex)
+        logger.error('Error save file')
+        return None
+    return file_name
 
 
 async def parser_chat_members_by_subscribes(parsered_chats: typing.List[str],
@@ -59,12 +73,13 @@ async def parser_chat_members_by_subscribes(parsered_chats: typing.List[str],
                     parser_private_channel(parsered_chats, api_id, api_hash, session_string)
     except Exception as ex:
         logger.exception(f'Ошибка здесь: {ex}')
-    return chat_members
+    result = create_result_file(chat_members)
+    return result
 
 
 def parser_chat_members_by_period(parsered_chats: typing.List[str],
-                                  period_from: datetime,
-                                  period_to: datetime,
+                                  period_from: datetime.date,
+                                  period_to: datetime.date,
                                   api_id: int,
                                   api_hash: str,
                                   session_string: str):
