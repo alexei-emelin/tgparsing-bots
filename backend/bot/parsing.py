@@ -45,7 +45,7 @@ async def parser_chat_members_by_subscribes(parsered_chats: typing.List[str],
                                             api_id: int,
                                             api_hash: str,
                                             session_string: str):
-    logger.info('Parser chat member by subscribes')
+    logger.info('Parser chat members by subscribes')
     try:
         chat_members = dict()
         async with Client(':memory:',
@@ -77,57 +77,54 @@ async def parser_chat_members_by_subscribes(parsered_chats: typing.List[str],
     return result
 
 
-def parser_chat_members_by_period(parsered_chats: typing.List[str],
-                                  period_from: datetime.date,
-                                  period_to: datetime.date,
-                                  api_id: int,
-                                  api_hash: str,
-                                  session_string: str):
-    with Client(api_id,
-                    api_hash,
-                    session_string,
-                    in_memory=True) as client:
+async def parser_chat_members_by_period(parsered_chats: typing.List[str],
+                                        period_from: datetime.date,
+                                        period_to: datetime.date,
+                                        api_id: int,
+                                        api_hash: str,
+                                        session_string: str):
+    logger.info('Parser chat members by period')
+    async with Client(':memory:',
+                      api_id,
+                      api_hash,
+                      session_string=session_string) as client:
         chat_members = dict()
         for chat_name in parsered_chats:
+            _chat_members = []
+            _period_from = datetime.datetime.fromisoformat(
+                period_from.isoformat()
+            )
+            _period_to = datetime.datetime.fromisoformat(
+                period_to.isoformat()
+            )
+            _period_to += datetime.timedelta(days=1)
+            history_messages = [x async for x in client.get_chat_history(chat_id=chat_name,
+                                                                         offset_date=_period_to,
+                                                                         limit=2000)]
+            for message in history_messages:
+                if message.date < _period_from:
+                    break
+                if message.from_user:
+                    _chat_members.append(message.from_user)
             try:
-                client.get_chat(chat_name)
-                print(client.get_chat(chat_name))
+                for chat_member in _chat_members:
+                    if isinstance(chat_member, types.ChatMember):
+                        if chat_member.status == 'left':
+                            continue
+                        user = chat_member.user
+                    else:
+                        user = chat_member
+                    info = info_user(user)
+                    if user.id not in chat_members:
+                        info['count'] = 1
+                        chat_members[user.id] = info
+                    else:
+                        chat_members[user.id]['count'] += 1
             except bad_request_400.ChatAdminRequired:
-                parser_private_channel(parsered_chats)
-            except Exception:
-                continue
-            else:
-                # Chat members parsing
-                _chat_members = []
-                period_to += datetime.timedelta(days=1)
-                for message in client.get_chat_history(chat_id=chat_name,
-                                                        offset_date=period_to,
-                                                        limit=2000):
-                    if message.date < period_from:
-                        break
-                    if message.from_user:
-                        _chat_members.append(message.from_user)
-                try:
-                    logger.info(f'this is chat members {_chat_members}')
-                    # chat_members = info_user(_chat_members)
-                    for chat_member in _chat_members:
-                        if isinstance(chat_member, types.ChatMember):
-                            if chat_member.status == 'left':
-                                continue
-                            user = chat_member.user
-                        else:
-                            user = chat_member
-                        info = info_user(user)
-                        if user.id not in chat_members:
-                            info['count'] = 1
-                            chat_members[user.id] = info
-                        else:
-                            chat_members[user.id]['count'] += 1
-                except bad_request_400.ChatAdminRequired:
-                    logger.exception('you cant see this message')
-                    parser_private_channel(parsered_chats, api_id, api_hash, session_string)
-
-    return chat_members
+                logger.exception('you cant see this message')
+                parser_private_channel(parsered_chats, api_id, api_hash, session_string)
+    result = create_result_file(chat_members)
+    return result
 
 
 def parser_private_channel(parsered_chats: typing.List[str],
