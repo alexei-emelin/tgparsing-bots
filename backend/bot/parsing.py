@@ -11,7 +11,7 @@ from pyrogram.raw import functions
 from pyrogram.errors import flood_420
 from pyrogram.errors.exceptions import bad_request_400
 
-from bot.utils.log_func import logger
+from utils.log_func import logger
 
 
 def info_user(user) -> dict:
