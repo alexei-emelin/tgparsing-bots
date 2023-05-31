@@ -165,3 +165,4 @@ db_data/
 requirements-old.txt
 
 *.session
+files/
