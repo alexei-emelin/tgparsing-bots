@@ -48,5 +48,15 @@ async def private_channel(api_id: int,
 
 
 @bot_router.get("/usersnearby")
-async def users_nearby():
-    return await parser_by_geo()
+async def users_nearby(lat: float,
+                       lng: float,
+                       accuracy_radius: int,
+                       api_id: int,
+                       api_hash: str,
+                       session_string: str):
+    return await parser_by_geo(lat,
+                               lng,
+                               accuracy_radius,
+                               api_id,
+                               api_hash,
+                               session_string)
