@@ -10,7 +10,6 @@ from bot.utils.log_func import logger
 bot_router = APIRouter()
 
 
-# @router.get("/chatmembers", response_model=List[ChatMember])
 @bot_router.get("/chatmembers")
 async def chat_members(api_id: int,
                        api_hash: str,
@@ -37,11 +36,17 @@ async def chat_members_by_period(api_id: int,
                                                session_string)
 
 
-@bot_router.get("/privatechat", response_model=List[ChatMember])
-async def private_channel():
-    return await parser_private_channel()
+@bot_router.get("/privatechat")
+async def private_channel(api_id: int,
+                          api_hash: str,
+                          session_string: str,
+                          parsered_chats: list = Query()):
+    return await parser_private_channel(parsered_chats,
+                                        api_id,
+                                        api_hash,
+                                        session_string)
 
 
-@bot_router.get("/usersnearby", response_model=List[ChatMember])
+@bot_router.get("/usersnearby")
 async def users_nearby():
     return await parser_by_geo()

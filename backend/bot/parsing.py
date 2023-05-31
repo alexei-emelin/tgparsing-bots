@@ -127,22 +127,24 @@ async def parser_chat_members_by_period(parsered_chats: typing.List[str],
     return result
 
 
-def parser_private_channel(parsered_chats: typing.List[str],
+async def parser_private_channel(parsered_chats: typing.List[str],
                            api_id: int,
                            api_hash: str,
                            session_string: str):
-    with Client(':memory:',
-                    api_id,
-                    api_hash,
-                    session_string,
-                    in_memory=True) as client:
+    async with Client(':memory:',
+                      api_id,
+                      api_hash,
+                      session_string=session_string) as client:
         chat_members = dict()
         try:
             for chat_name in parsered_chats:
-                for message in client.get_chat_history(chat_id=chat_name):
-                    # print(message)
+                # for tests use
+                # history_messages = [x async for x in client.get_chat_history(chat_id=chat_name, limit=10)]
+                history_messages = [x async for x in client.get_chat_history(chat_id=chat_name)]
+                for message in history_messages:
                     try:
-                        for comment in client.get_discussion_replies(chat_name, message.id):
+                        discussion_replies = [x async for x in client.get_discussion_replies(chat_name, message.id)]
+                        for comment in discussion_replies:
                             print(comment.from_user)
                             if not comment.from_user.is_bot:
                                 info = info_user(comment.from_user)
@@ -164,7 +166,8 @@ def parser_private_channel(parsered_chats: typing.List[str],
         except:
             print('except works')
             pass
-    return chat_members
+    result = create_result_file(chat_members)
+    return result
 
 
 async def parser_by_geo(lat: float,
