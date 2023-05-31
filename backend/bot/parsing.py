@@ -28,49 +28,37 @@ def info_user(user) -> dict:
 
 
 async def parser_chat_members_by_subscribes(parsered_chats: typing.List[str],
-                                      api_id: int,
-                                      api_hash: str,
-                                      session_string: str):
+                                            api_id: int,
+                                            api_hash: str,
+                                            session_string: str):
+    logger.info('Parser chat member by subscribes')
     try:
-        with Client(':memory:',
+        chat_members = dict()
+        async with Client(':memory:',
                         api_id,
                         api_hash,
-                        session_string,
-                        in_memory=True) as client:
-            chat_members = dict()
+                        session_string=session_string) as client:
             for chat_name in parsered_chats:
+                _chat_members = [x async for x in client.get_chat_members(chat_name)]
                 try:
-                    client.get_chat(chat_name)
-                    print(client.get_chat(chat_name))
+                    for chat_member in _chat_members:
+                        if isinstance(chat_member, types.ChatMember):
+                            if chat_member.status == 'left':
+                                continue
+                            user = chat_member.user
+                        else:
+                            user = chat_member
+                        info = info_user(user)
+                        if user.id not in chat_members:
+                            info['count'] = 1
+                            chat_members[user.id] = info
+                        else:
+                            chat_members[user.id]['count'] += 1
                 except bad_request_400.ChatAdminRequired:
-                    parser_private_channel(parsered_chats)
-                except Exception:
-                    continue
-                else:
-                    # Chat members parsing
-                    _chat_members = client.get_chat_members(chat_name)
-                    try:
-                        logger.info(f'this is chat members {_chat_members}')
-                        # chat_members = info_user(_chat_members)
-                        for chat_member in _chat_members:
-                            if isinstance(chat_member, types.ChatMember):
-                                if chat_member.status == 'left':
-                                    continue
-                                user = chat_member.user
-                            else:
-                                user = chat_member
-                            info = info_user(user)
-                            if user.id not in chat_members:
-                                info['count'] = 1
-                                chat_members[user.id] = info
-                            else:
-                                chat_members[user.id]['count'] += 1
-                    except bad_request_400.ChatAdminRequired:
-                        logger.exception('you cant see this message')
-                        parser_private_channel(parsered_chats, api_id, api_hash, session_string)
+                    logger.exception('you cant see this message')
+                    parser_private_channel(parsered_chats, api_id, api_hash, session_string)
     except Exception as ex:
         logger.exception(f'Ошибка здесь: {ex}')
-
     return chat_members
 
 
@@ -80,8 +68,7 @@ def parser_chat_members_by_period(parsered_chats: typing.List[str],
                                   api_id: int,
                                   api_hash: str,
                                   session_string: str):
-    with Client(':memory:',
-                    api_id,
+    with Client(api_id,
                     api_hash,
                     session_string,
                     in_memory=True) as client:
