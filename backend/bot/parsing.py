@@ -8,10 +8,9 @@ import json
 from pyrogram import Client, types
 from pyrogram.raw.types import InputGeoPoint
 from pyrogram.raw import functions
-from pyrogram.errors import flood_420
-from pyrogram.errors.exceptions import bad_request_400
+from pyrogram.errors.exceptions import bad_request_400, flood_420
 
-from utils.log_func import logger
+from bot.utils.log_func import logger
 
 
 def info_user(user) -> dict:
@@ -53,12 +52,12 @@ def create_result_file(data: typing.Dict):
     return file_name
 
 
-async def parser_chat_members_by_subscribes(parsered_chats: typing.List[str],
+async def parser_chat_members_by_subscribes(parsered_chats: list[str],
                                             api_id: int,
                                             api_hash: str,
                                             session_string: str):
     logger.info('Parser chat members by subscribes')
-    
+
     chat_members = dict()
     async with Client(':memory:',
                     api_id,
