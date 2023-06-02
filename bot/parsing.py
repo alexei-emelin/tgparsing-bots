@@ -5,7 +5,7 @@ import os
 import time
 import typing
 
-from pyrogram import Client, types
+from pyrogram import Client, types, enums
 from pyrogram.errors.exceptions import bad_request_400, flood_420
 from pyrogram.raw import functions
 from pyrogram.raw.types import InputGeoPoint
@@ -38,10 +38,10 @@ def info_user_for_geo(user) -> dict:
     return info
 
 
-def create_result_file(data: typing.Dict):
+def create_result_file(data: typing.Dict, chat_name):
     os.makedirs("files", exist_ok=True)
     timestr = time.strftime("%Y%m%d-%H%M%S")
-    file_name = f"files/{timestr}.json"
+    file_name = f"files/{chat_name}_{timestr}.json"
     try:
         with open(file_name, "w", encoding="utf-8") as result_file:
             json.dump(data, result_file, ensure_ascii=False)
@@ -62,31 +62,28 @@ async def parser_chat_members_by_subscribes(
         ":memory:", api_id, api_hash, session_string=session_string
     ) as client:
         for chat_name in parsered_chats:
-            _chat_members = [
-                x async for x in client.get_chat_members(chat_name)
-            ]
-            try:
+            # TODO проверку на тип чата - сделал Стас (надо порефакторить if)
+            chat = await client.get_chat(chat_name)
+            if chat.type is enums.ChatType.CHANNEL:
+                channel = []
+                channel.append(chat_name)
+                await parser_private_channel(
+                    channel, api_id, api_hash, session_string
+                )
+            else:
+                _chat_members = [
+                    x async for x in client.get_chat_members(chat_name)
+                ]
                 for chat_member in _chat_members:
-                    if isinstance(chat_member, types.ChatMember):
-                        if chat_member.status == "left":
-                            continue
-                        user = chat_member.user
-                    else:
-                        user = chat_member
+                    user = chat_member.user
                     info = info_user(user)
                     if user.id not in chat_members:
                         info["count"] = 1
                         chat_members[user.id] = info
                     else:
                         chat_members[user.id]["count"] += 1
-            except bad_request_400.ChatAdminRequired:
-                logger.exception("you cant see this message")
-                parser_private_channel(
-                    parsered_chats, api_id, api_hash, session_string
-                )
-    result = create_result_file(chat_members)
-    return result
-
+                create_result_file(chat_members, chat_name)
+            
 
 async def parser_chat_members_by_period(
     parsered_chats: typing.List[str],
@@ -101,45 +98,30 @@ async def parser_chat_members_by_period(
         ":memory:", api_id, api_hash, session_string=session_string
     ) as client:
         chat_members = dict()
+        # TODO проверку на тип чата
         for chat_name in parsered_chats:
             _chat_members = []
-            _period_from = datetime.datetime.fromisoformat(
-                period_from.isoformat()
-            )
-            _period_to = datetime.datetime.fromisoformat(period_to.isoformat())
-            _period_to += datetime.timedelta(days=1)
             history_messages = [
                 x
                 async for x in client.get_chat_history(
-                    chat_id=chat_name, offset_date=_period_to, limit=2000
+                    chat_id=chat_name, offset_date=period_to, limit=2000
                 )
             ]
             for message in history_messages:
-                if message.date < _period_from:
-                    break
+                if message.date < period_from:
+                    continue
                 if message.from_user:
                     _chat_members.append(message.from_user)
-            try:
+         
                 for chat_member in _chat_members:
-                    if isinstance(chat_member, types.ChatMember):
-                        if chat_member.status == "left":
-                            continue
-                        user = chat_member.user
-                    else:
-                        user = chat_member
+                    user = chat_member
                     info = info_user(user)
                     if user.id not in chat_members:
                         info["count"] = 1
                         chat_members[user.id] = info
                     else:
                         chat_members[user.id]["count"] += 1
-            except bad_request_400.ChatAdminRequired:
-                logger.exception("you cant see this message")
-                parser_private_channel(
-                    parsered_chats, api_id, api_hash, session_string
-                )
-    result = create_result_file(chat_members)
-    return result
+            create_result_file(chat_members, chat_name)
 
 
 async def parser_private_channel(
@@ -153,10 +135,10 @@ async def parser_private_channel(
     ) as client:
         chat_members = dict()
         for chat_name in parsered_chats:
-            # for tests use
-            # history_messages = [x async for x in client.get_chat_history(chat_id=chat_name, limit=10)]
+            # TODO for tests use
+            # TODO history_messages = [x async for x in client.get_chat_history(chat_id=chat_name, limit=10)]
             history_messages = [
-                x async for x in client.get_chat_history(chat_id=chat_name)
+                x async for x in client.get_chat_history(chat_id=chat_name, limit=5)
             ]
             for message in history_messages:
                 try:
@@ -167,7 +149,6 @@ async def parser_private_channel(
                         )
                     ]
                     for comment in discussion_replies:
-                        print(comment.from_user)
                         if not comment.from_user.is_bot:
                             info = info_user(comment.from_user)
                             if comment.from_user.id not in chat_members:
@@ -185,8 +166,7 @@ async def parser_private_channel(
                 except Exception as ext:
                     logger.exception(ext)
                     continue
-    result = create_result_file(chat_members)
-    return result
+        create_result_file(chat_members, chat_name)
 
 
 async def parser_by_geo(
@@ -200,34 +180,24 @@ async def parser_by_geo(
     logger.info("Start parse geo locate")
 
     nearby_users = dict()
-    try:
-        async with Client(
-            ":memory:", api_id, api_hash, session_string=session_string
-        ) as client:
-            r = await client.invoke(
-                functions.contacts.GetLocated(
-                    geo_point=InputGeoPoint(
-                        lat=lat, long=lng, accuracy_radius=accuracy_radius
-                    ),
-                    background=False,
-                    self_expires=0x7FFFFFFF,
-                )
+    async with Client(
+        ":memory:", api_id, api_hash, session_string=session_string
+    ) as client:
+        r = await client.invoke(
+            functions.contacts.GetLocated(
+                geo_point=InputGeoPoint(
+                    lat=lat, long=lng, accuracy_radius=accuracy_radius
+                ),
+                background=False,
+                self_expires=0x7FFFFFFF,
             )
-            for nearby_user in r.users:
-                if isinstance(nearby_user, types.ChatMember):
-                    if nearby_user.status == "left":
-                        continue
-                    user = nearby_user.user
-                else:
-                    user = nearby_user
-                info = info_user_for_geo(user)
-                if user.id not in nearby_users:
-                    info["count"] = 1
-                    nearby_users[user.id] = info
-                else:
-                    nearby_users[user.id]["count"] += 1
-    except Exception as ex:
-        logger.exception(ex)
-        nearby_users = {"error": f"Error: {ex}"}
-    result = create_result_file(nearby_users)
-    return result
+        )
+        for user in r.users:
+            info = info_user_for_geo(user)
+            if user.id not in nearby_users:
+                info["count"] = 1
+                nearby_users[user.id] = info
+            else:
+                nearby_users[user.id]["count"] += 1
+    name = f"geopars_rad_{accuracy_radius}"
+    return create_result_file(nearby_users, name)
