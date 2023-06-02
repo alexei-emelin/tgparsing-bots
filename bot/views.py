@@ -24,8 +24,14 @@ async def by_period_members(
     period_to: datetime.date,
     parsered_chats: list = Query(),
 ):
+    period_from_ = datetime.datetime.fromisoformat(
+        period_from.isoformat()
+    )
+    period_to_ = datetime.datetime.fromisoformat(period_to.isoformat())
+    period_to_ += datetime.timedelta(days=1)
+
     return await ps.parser_chat_members_by_period(
-        parsered_chats, period_from, period_to, api_id, api_hash, session_string
+        parsered_chats, period_from_, period_to_, api_id, api_hash, session_string
     )
 
 
