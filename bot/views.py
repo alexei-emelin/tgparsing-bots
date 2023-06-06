@@ -1,8 +1,10 @@
 import datetime
+from typing import Optional
 
 from fastapi import Query
 
 import bot.parsing as ps
+from bot.bot import check_account_on_block, check_account_by_geo
 
 
 async def chat_members(
@@ -11,7 +13,7 @@ async def chat_members(
     session_string: str,
     parsered_chats: list = Query(),
 ):
-    return await ps.parser_chat_members_by_subscribes(
+    return await ps.start_parser_by_subscribes(
         parsered_chats, api_id, api_hash, session_string
     )
 
@@ -30,7 +32,7 @@ async def by_period_members(
     period_to_ = datetime.datetime.fromisoformat(period_to.isoformat())
     period_to_ += datetime.timedelta(days=1)
 
-    return await ps.parser_chat_members_by_period(
+    return await ps.start_parser_by_period(
         parsered_chats, period_from_, period_to_, api_id, api_hash, session_string
     )
 
@@ -53,7 +55,24 @@ async def privat_members(
     api_hash: str,
     session_string: str,
     parsered_chats: list = Query(),
+    limit: Optional[int] = 500
 ):
-    return await ps.parser_private_channel(
-        parsered_chats, api_id, api_hash, session_string
+    return await ps.start_parser_privat_chanels(
+        parsered_chats, api_id, api_hash, session_string, limit
     )
+
+
+async def check_block(
+    api_id: int,
+    api_hash: str,
+    session_string: str
+):
+    return await check_account_on_block(api_id, api_hash, session_string)
+
+
+async def check_geo(
+    api_id: int,
+    api_hash: str,
+    session_string: str
+):
+    return await check_account_by_geo(api_id, api_hash, session_string)
