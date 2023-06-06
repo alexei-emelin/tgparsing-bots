@@ -23,9 +23,9 @@ async def get_type_chat(
     ) as client:
         try:
             chat_info = await client.get_chat(chat)
-        except Exception as ex:
-            logger.exception(ex)
-            return None
+        except KeyError as ex:
+            logger.error(ex)
+            return
     return chat_info.type
 
 
@@ -64,7 +64,7 @@ def create_result_file(data: typing.Dict):
     except Exception as ex:
         logger.exception(ex)
         logger.error("Error save file")
-        return None
+        return
     return file_name
 
 
@@ -77,10 +77,10 @@ async def parser_chat_members_by_subscribes(
     async with Client(
         ":memory:", api_id, api_hash, session_string=session_string
     ) as client:
-        _chat_members = [
+        members_list = [
             x async for x in client.get_chat_members(chat_name)
         ]
-        for chat_member in _chat_members:
+        for chat_member in members_list:
             user = chat_member.user
             info = info_user(user)
             if user.id not in chat_members:
@@ -88,32 +88,32 @@ async def parser_chat_members_by_subscribes(
                 chat_members[user.id] = info
             else:
                 chat_members[user.id]["count"] += 1
-    result = create_result_file(chat_members)
-    return result
+    file_path = create_result_file(chat_members)
+    return file_path
 
 
 async def start_parser_by_subscribes(
     parsered_chats: typing.List[str], api_id: int, api_hash: str, session_string: str
 ) -> typing.List[str]:
-    result_files = []
+    file_paths_list = []
     for chat in parsered_chats:
         chat_type = await get_type_chat(chat, api_id, api_hash, session_string)
         if (chat_type == ChatType.GROUP or
             chat_type == ChatType.SUPERGROUP):
-            result_file = await parser_chat_members_by_subscribes(
+            file_path = await parser_chat_members_by_subscribes(
                 chat, api_id, api_hash, session_string
             )
-            result_files.append(result_file)
+            file_paths_list.append(file_path)
         else:
             info_text = f'''
             {chat} не является чатом, проверьте правильность ссылки, либо воспользуйтесь другой услугой
             '''
-            result = {
+            answer = {
                 'error': textwrap.dedent(info_text).strip()
             }
-            result_file = create_result_file(result)
-            result_files.append(result_file)
-    return result_files
+            file_path = create_result_file(answer)
+            file_paths_list.append(file_path)
+    return file_paths_list
 
 
 async def parser_chat_members_by_period(
@@ -129,7 +129,7 @@ async def parser_chat_members_by_period(
     async with Client(
         ":memory:", api_id, api_hash, session_string=session_string
     ) as client:
-        _chat_members = []
+        members_list = []
         history_messages = [
             x
             async for x in client.get_chat_history(
@@ -140,9 +140,9 @@ async def parser_chat_members_by_period(
             if message.date < period_from:
                 continue
             if message.from_user:
-                _chat_members.append(message.from_user)
+                members_list.append(message.from_user)
         
-            for chat_member in _chat_members:
+            for chat_member in members_list:
                 user = chat_member
                 info = info_user(user)
                 if user.id not in chat_members:
@@ -150,8 +150,8 @@ async def parser_chat_members_by_period(
                     chat_members[user.id] = info
                 else:
                     chat_members[user.id]["count"] += 1
-    result = create_result_file(chat_members)
-    return result
+    file_path = create_result_file(chat_members)
+    return file_path
 
 
 async def start_parser_by_period(
@@ -162,25 +162,25 @@ async def start_parser_by_period(
     api_hash: str,
     session_string: str
 ) -> typing.List[str]:
-    result_files = []
+    file_paths_list = []
     for chat in parsered_chats:
         chat_type = await get_type_chat(chat, api_id, api_hash, session_string)
         if (chat_type == ChatType.GROUP or
             chat_type == ChatType.SUPERGROUP):
-            result_file = await parser_chat_members_by_period(
+            file_path = await parser_chat_members_by_period(
                 chat, period_from, period_to, api_id, api_hash, session_string
             )
-            result_files.append(result_file)
+            file_paths_list.append(file_path)
         else:
             info_text = f'''
             {chat} не является чатом, проверьте правильность ссылки, либо воспользуйтесь другой услугой
             '''
-            result = {
+            answer = {
                 'error': textwrap.dedent(info_text).strip()
             }
-            result_file = create_result_file(result)
-            result_files.append(result_file)
-    return result_files
+            file_path = create_result_file(answer)
+            file_paths_list.append(file_path)
+    return file_paths_list
 
 
 async def parser_private_channel(
@@ -214,30 +214,27 @@ async def parser_private_channel(
                         else:
                             chat_members[comment.from_user.id]["count"] += 1
             except bad_request_400.MsgIdInvalid:
-                logger.exception("Не удалось получить комментарии к посту")
+                logger.error("Не удалось получить комментарии к посту")
                 continue
             except flood_420.FloodWait as wait_err:
                 logger.error(wait_err)
                 logger.info(f"Wait {wait_err.value}")
                 time.sleep(wait_err.value)
-            except Exception as ext:
-                logger.exception(ext)
-                continue
-    result = create_result_file(chat_members)
-    return result
+    file_path = create_result_file(chat_members)
+    return file_path
 
 
 async def start_parser_privat_chanels(
     parsered_chats: typing.List[str], api_id: int, api_hash: str, session_string: str, limit: int
 ) -> typing.List[str]:
-    result_files = []
+    file_paths_list = []
     for chat in parsered_chats:
         chat_type = await get_type_chat(chat, api_id, api_hash, session_string)
         if (chat_type == ChatType.CHANNEL):
-            result_file = await parser_private_channel(
+            file_path = await parser_private_channel(
                 chat, api_id, api_hash, session_string, limit
             )
-            result_files.append(result_file)
+            file_paths_list.append(file_path)
         else:
             info_text = f'''
             {chat} не является каналом, проверьте правильность ссылки, либо воспользуйтесь другой услугой
@@ -245,9 +242,9 @@ async def start_parser_privat_chanels(
             result = {
                 'error': textwrap.dedent(info_text).strip()
             }
-            result_file = create_result_file(result)
-            result_files.append(result_file)
-    return result_files
+            file_path = create_result_file(result)
+            file_paths_list.append(file_path)
+    return file_paths_list
 
 
 async def parser_by_geo(
@@ -264,7 +261,7 @@ async def parser_by_geo(
     async with Client(
         ":memory:", api_id, api_hash, session_string=session_string
     ) as client:
-        r = await client.invoke(
+        response = await client.invoke(
             functions.contacts.GetLocated(
                 geo_point=InputGeoPoint(
                     lat=lat, long=lng, accuracy_radius=accuracy_radius
@@ -273,7 +270,7 @@ async def parser_by_geo(
                 self_expires=0x7FFFFFFF,
             )
         )
-        for nearby_user in r.users:
+        for nearby_user in response.users:
             user = nearby_user
             info = info_user_for_geo(user)
             if user.id not in nearby_users:
@@ -281,5 +278,5 @@ async def parser_by_geo(
                 nearby_users[user.id] = info
             else:
                 nearby_users[user.id]["count"] += 1
-    result = create_result_file(nearby_users)
-    return result
+    file_path = create_result_file(nearby_users)
+    return file_path
