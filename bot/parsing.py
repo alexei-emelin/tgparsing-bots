@@ -1,12 +1,11 @@
-import asyncio
 import datetime
 import json
 import os
+import textwrap
 import time
 import typing
-import textwrap
 
-from pyrogram import Client, types
+from pyrogram import Client
 from pyrogram.enums import ChatType
 from pyrogram.errors.exceptions import bad_request_400, flood_420
 from pyrogram.raw import functions
@@ -16,7 +15,7 @@ from bot.utils.log_func import logger
 
 
 async def get_type_chat(
-        chat: str, api_id: int, api_hash: str, session_string: str
+    chat: str, api_id: int, api_hash: str, session_string: str
 ) -> ChatType:
     async with Client(
         ":memory:", api_id, api_hash, session_string=session_string
@@ -54,18 +53,13 @@ def info_user_for_geo(user) -> dict:
     return info
 
 
-def create_result_file(data: typing.Dict):
+def create_result_file(data: typing.Dict, chat_name: str) -> str:
     os.makedirs("files", exist_ok=True)
     timestr = time.strftime("%Y%m%d-%H%M%S")
-    file_name = f"files/{timestr}.json"
-    try:
-        with open(file_name, "w", encoding="utf-8") as result_file:
-            json.dump(data, result_file, ensure_ascii=False)
-    except Exception as ex:
-        logger.exception(ex)
-        logger.error("Error save file")
-        return
-    return file_name
+    file_path = f"files/{chat_name}_{timestr}.json"
+    with open(file_path, "w", encoding="utf-8") as result_file:
+        json.dump(data, result_file, ensure_ascii=False)
+    return file_path
 
 
 async def parser_chat_members_by_subscribes(
@@ -77,9 +71,7 @@ async def parser_chat_members_by_subscribes(
     async with Client(
         ":memory:", api_id, api_hash, session_string=session_string
     ) as client:
-        members_list = [
-            x async for x in client.get_chat_members(chat_name)
-        ]
+        members_list = [x async for x in client.get_chat_members(chat_name)]
         for chat_member in members_list:
             user = chat_member.user
             info = info_user(user)
@@ -88,30 +80,30 @@ async def parser_chat_members_by_subscribes(
                 chat_members[user.id] = info
             else:
                 chat_members[user.id]["count"] += 1
-    file_path = create_result_file(chat_members)
+    file_path = create_result_file(chat_members, chat_name)
     return file_path
 
 
 async def start_parser_by_subscribes(
-    parsered_chats: typing.List[str], api_id: int, api_hash: str, session_string: str
+    parsered_chats: typing.List[str],
+    api_id: int,
+    api_hash: str,
+    session_string: str,
 ) -> typing.List[str]:
     file_paths_list = []
     for chat in parsered_chats:
         chat_type = await get_type_chat(chat, api_id, api_hash, session_string)
-        if (chat_type == ChatType.GROUP or
-            chat_type == ChatType.SUPERGROUP):
+        if chat_type == ChatType.GROUP or chat_type == ChatType.SUPERGROUP:
             file_path = await parser_chat_members_by_subscribes(
                 chat, api_id, api_hash, session_string
             )
             file_paths_list.append(file_path)
         else:
-            info_text = f'''
+            info_text = f"""
             {chat} не является чатом, проверьте правильность ссылки, либо воспользуйтесь другой услугой
-            '''
-            answer = {
-                'error': textwrap.dedent(info_text).strip()
-            }
-            file_path = create_result_file(answer)
+            """
+            answer = {"error": textwrap.dedent(info_text).strip()}
+            file_path = create_result_file(answer, chat)
             file_paths_list.append(file_path)
     return file_paths_list
 
@@ -122,7 +114,7 @@ async def parser_chat_members_by_period(
     period_to: datetime.date,
     api_id: int,
     api_hash: str,
-    session_string: str
+    session_string: str,
 ):
     logger.info("Parser chat members by period")
     chat_members = dict()
@@ -141,7 +133,7 @@ async def parser_chat_members_by_period(
                 continue
             if message.from_user:
                 members_list.append(message.from_user)
-        
+
             for chat_member in members_list:
                 user = chat_member
                 info = info_user(user)
@@ -150,7 +142,7 @@ async def parser_chat_members_by_period(
                     chat_members[user.id] = info
                 else:
                     chat_members[user.id]["count"] += 1
-    file_path = create_result_file(chat_members)
+    file_path = create_result_file(chat_members, chat_name)
     return file_path
 
 
@@ -160,42 +152,38 @@ async def start_parser_by_period(
     period_to: datetime.date,
     api_id: int,
     api_hash: str,
-    session_string: str
+    session_string: str,
 ) -> typing.List[str]:
     file_paths_list = []
     for chat in parsered_chats:
         chat_type = await get_type_chat(chat, api_id, api_hash, session_string)
-        if (chat_type == ChatType.GROUP or
-            chat_type == ChatType.SUPERGROUP):
+        if chat_type == ChatType.GROUP or chat_type == ChatType.SUPERGROUP:
             file_path = await parser_chat_members_by_period(
                 chat, period_from, period_to, api_id, api_hash, session_string
             )
             file_paths_list.append(file_path)
         else:
-            info_text = f'''
+            info_text = f"""
             {chat} не является чатом, проверьте правильность ссылки, либо воспользуйтесь другой услугой
-            '''
-            answer = {
-                'error': textwrap.dedent(info_text).strip()
-            }
-            file_path = create_result_file(answer)
+            """
+            answer = {"error": textwrap.dedent(info_text).strip()}
+            file_path = create_result_file(answer, chat)
             file_paths_list.append(file_path)
     return file_paths_list
 
 
 async def parser_private_channel(
-    chat_name: str,
-    api_id: int,
-    api_hash: str,
-    session_string: str,
-    limit: int
+    chat_name: str, api_id: int, api_hash: str, session_string: str, limit: int
 ):
     chat_members = dict()
     async with Client(
         ":memory:", api_id, api_hash, session_string=session_string
     ) as client:
         history_messages = [
-            x async for x in client.get_chat_history(chat_id=chat_name, limit=limit)
+            x
+            async for x in client.get_chat_history(
+                chat_id=chat_name, limit=limit
+            )
         ]
         for message in history_messages:
             try:
@@ -220,29 +208,31 @@ async def parser_private_channel(
                 logger.error(wait_err)
                 logger.info(f"Wait {wait_err.value}")
                 time.sleep(wait_err.value)
-    file_path = create_result_file(chat_members)
+    file_path = create_result_file(chat_members, chat_name)
     return file_path
 
 
 async def start_parser_privat_chanels(
-    parsered_chats: typing.List[str], api_id: int, api_hash: str, session_string: str, limit: int
+    parsered_chats: typing.List[str],
+    api_id: int,
+    api_hash: str,
+    session_string: str,
+    limit: int,
 ) -> typing.List[str]:
     file_paths_list = []
     for chat in parsered_chats:
         chat_type = await get_type_chat(chat, api_id, api_hash, session_string)
-        if (chat_type == ChatType.CHANNEL):
+        if chat_type == ChatType.CHANNEL:
             file_path = await parser_private_channel(
                 chat, api_id, api_hash, session_string, limit
             )
             file_paths_list.append(file_path)
         else:
-            info_text = f'''
+            info_text = f"""
             {chat} не является каналом, проверьте правильность ссылки, либо воспользуйтесь другой услугой
-            '''
-            result = {
-                'error': textwrap.dedent(info_text).strip()
-            }
-            file_path = create_result_file(result)
+            """
+            result = {"error": textwrap.dedent(info_text).strip()}
+            file_path = create_result_file(result, chat)
             file_paths_list.append(file_path)
     return file_paths_list
 
@@ -278,5 +268,5 @@ async def parser_by_geo(
                 nearby_users[user.id] = info
             else:
                 nearby_users[user.id]["count"] += 1
-    file_path = create_result_file(nearby_users)
-    return file_path
+    name = f"geopars_rad_{accuracy_radius}"
+    return create_result_file(nearby_users, name)
