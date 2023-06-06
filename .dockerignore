@@ -1,0 +1,28 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Docker
+docker-compose.yml
+Dockerfile
+.docker
+.dockerignore
+
+# Byte-compiled / optimized / DLL files
+**/__pycache__/
+**/*.py[cod]
+**/.mypy_cache/
+
+
+# Virtual environment
+.env
+.venv/
+venv/
+venv-bots
+
+# PyCharm
+.idea
+
+# VS Code
+.vscode/

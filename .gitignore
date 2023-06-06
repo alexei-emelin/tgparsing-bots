@@ -128,7 +128,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-
+venv-bots/
 # Spyder project settings
 .spyderproject
 .spyproject
@@ -166,3 +166,4 @@ requirements-old.txt
 
 *.session
 files/
+parsing_files/
