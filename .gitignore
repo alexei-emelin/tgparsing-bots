@@ -166,3 +166,4 @@ requirements-old.txt
 
 *.session
 files/
+parsing_files/
