@@ -1,8 +1,7 @@
-name: Test Backend and Deploy
+name: Test Bots and Deploy
 
 on:
-   push:
-    branches: [ main ]
+   [push]
 
 jobs:
   test:
@@ -28,7 +27,8 @@ jobs:
       #   working-directory: ./backend
       #   run: |
       #     pytest .
-  deploy-backend:
+  deploy-bots:
+    if: github.ref_name == 'main'
     runs-on: ubuntu-latest
     needs: test
     steps:
