@@ -16,7 +16,7 @@ from bot.utils.log_func import logger
 
 async def get_type_chat(
     chat: str, api_id: int, api_hash: str, session_string: str
-) -> ChatType:
+) -> ChatType | None:
     async with Client(
         ":memory:", api_id, api_hash, session_string=session_string
     ) as client:
@@ -24,12 +24,12 @@ async def get_type_chat(
             chat_info = await client.get_chat(chat)
         except KeyError as ex:
             logger.error(ex)
-            return
+            return None
     return chat_info.type
 
 
 def info_user(user) -> dict:
-    info = dict()
+    info = {}
     if not user.is_bot:
         info["user_id"] = user.id
         info["first_name"] = user.first_name
@@ -43,7 +43,7 @@ def info_user(user) -> dict:
 
 
 def info_user_for_geo(user) -> dict:
-    info = dict()
+    info = {}
     info["user_id"] = user.id
     info["first_name"] = user.first_name
     if user.last_name:
@@ -67,7 +67,7 @@ async def parser_chat_members_by_subscribes(
 ):
     logger.info("Parser chat members by subscribes")
 
-    chat_members = dict()
+    chat_members = {}
     async with Client(
         ":memory:", api_id, api_hash, session_string=session_string
     ) as client:
@@ -93,14 +93,15 @@ async def start_parser_by_subscribes(
     file_paths_list = []
     for chat in parsered_chats:
         chat_type = await get_type_chat(chat, api_id, api_hash, session_string)
-        if chat_type == ChatType.GROUP or chat_type == ChatType.SUPERGROUP:
+        if chat_type in [ChatType.GROUP, ChatType.SUPERGROUP]:
             file_path = await parser_chat_members_by_subscribes(
                 chat, api_id, api_hash, session_string
             )
             file_paths_list.append(file_path)
         else:
             info_text = f"""
-            {chat} не является чатом, проверьте правильность ссылки, либо воспользуйтесь другой услугой
+            {chat} не является чатом, проверьте правильность ссылки, \
+            либо воспользуйтесь другой услугой
             """
             answer = {"error": textwrap.dedent(info_text).strip()}
             file_path = create_result_file(answer, chat)
@@ -117,7 +118,7 @@ async def parser_chat_members_by_period(
     session_string: str,
 ):
     logger.info("Parser chat members by period")
-    chat_members = dict()
+    chat_members = {}
     async with Client(
         ":memory:", api_id, api_hash, session_string=session_string
     ) as client:
@@ -157,14 +158,15 @@ async def start_parser_by_period(
     file_paths_list = []
     for chat in parsered_chats:
         chat_type = await get_type_chat(chat, api_id, api_hash, session_string)
-        if chat_type == ChatType.GROUP or chat_type == ChatType.SUPERGROUP:
+        if chat_type in [ChatType.GROUP, ChatType.SUPERGROUP]:
             file_path = await parser_chat_members_by_period(
                 chat, period_from, period_to, api_id, api_hash, session_string
             )
             file_paths_list.append(file_path)
         else:
             info_text = f"""
-            {chat} не является чатом, проверьте правильность ссылки, либо воспользуйтесь другой услугой
+            {chat} не является чатом, проверьте правильность ссылки, \
+            либо воспользуйтесь другой услугой
             """
             answer = {"error": textwrap.dedent(info_text).strip()}
             file_path = create_result_file(answer, chat)
@@ -175,7 +177,7 @@ async def start_parser_by_period(
 async def parser_private_channel(
     chat_name: str, api_id: int, api_hash: str, session_string: str, limit: int
 ):
-    chat_members = dict()
+    chat_members = {}
     async with Client(
         ":memory:", api_id, api_hash, session_string=session_string
     ) as client:
@@ -206,7 +208,7 @@ async def parser_private_channel(
                 continue
             except flood_420.FloodWait as wait_err:
                 logger.error(wait_err)
-                logger.info(f"Wait {wait_err.value}")
+                logger.info("Wait %s", wait_err.value)
                 time.sleep(wait_err.value)
     file_path = create_result_file(chat_members, chat_name)
     return file_path
@@ -229,7 +231,8 @@ async def start_parser_privat_chanels(
             file_paths_list.append(file_path)
         else:
             info_text = f"""
-            {chat} не является каналом, проверьте правильность ссылки, либо воспользуйтесь другой услугой
+            {chat} не является каналом, проверьте правильность ссылки, \
+            либо воспользуйтесь другой услугой
             """
             result = {"error": textwrap.dedent(info_text).strip()}
             file_path = create_result_file(result, chat)
@@ -247,7 +250,7 @@ async def parser_by_geo(
 ):
     logger.info("Start parse geo locate")
 
-    nearby_users = dict()
+    nearby_users = {}
     async with Client(
         ":memory:", api_id, api_hash, session_string=session_string
     ) as client:

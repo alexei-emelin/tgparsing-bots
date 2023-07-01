@@ -23,7 +23,8 @@ repos:
         exclude: migrations/
         args: 
           [
-            "--profile=black"
+            "--profile=black",
+            "--line-length=79"
           ]     
     
   - repo: local
