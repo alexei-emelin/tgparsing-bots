@@ -2,11 +2,12 @@ from fastapi import APIRouter
 
 from bot import views
 
+
 bot_router = APIRouter()
 
 bot_router.add_api_route(
-    "/chatmembers",
-    endpoint=views.chat_members,
+    "/members",
+    endpoint=views.get_chat_members,
     methods=["GET"],
     tags=["parsing"],
 )

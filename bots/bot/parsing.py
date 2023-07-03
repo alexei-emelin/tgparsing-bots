@@ -5,40 +5,32 @@ import textwrap
 import time
 import typing
 
-from pyrogram import Client
+from pyrogram import Client, enums
 from pyrogram.enums import ChatType
 from pyrogram.errors.exceptions import bad_request_400, flood_420
 from pyrogram.raw import functions
 from pyrogram.raw.types import InputGeoPoint
+from pyrogram.types import Chat
 
 from bot.utils.log_func import logger
 
 
-async def get_type_chat(
-    chat: str, api_id: int, api_hash: str, session_string: str
-) -> ChatType | None:
-    async with Client(
-        ":memory:", api_id, api_hash, session_string=session_string
-    ) as client:
-        try:
-            chat_info = await client.get_chat(chat)
-        except KeyError as ex:
-            logger.error(ex)
-            return None
-    return chat_info.type
+async def get_group_info(client: Client, chat: str) -> Chat | None:
+    try:
+        chat_info = await client.get_chat(chat)
+        return chat_info
+    except Exception as ex:
+        return None
 
 
-def info_user(user) -> dict:
-    info = {}
-    if not user.is_bot:
-        info["user_id"] = user.id
-        info["first_name"] = user.first_name
-        if user.last_name:
-            info["last_name"] = user.last_name
-        if user.username:
-            info["username"] = user.username
-        if user.phone_number:
-            info["phone_number"] = user.phone_number
+def get_user_info(user) -> dict:
+    info = {
+        "user_id": user.id,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "username": user.username,
+        "phone_number": user.phone_number,
+    }
     return info
 
 
@@ -62,51 +54,29 @@ def create_result_file(data: typing.Dict, chat_name: str) -> str:
     return file_path
 
 
-async def parser_chat_members_by_subscribes(
-    chat_name: str, api_id: int, api_hash: str, session_string: str
-):
-    logger.info("Parser chat members by subscribes")
-
-    chat_members = {}
-    async with Client(
-        ":memory:", api_id, api_hash, session_string=session_string
-    ) as client:
-        members_list = [x async for x in client.get_chat_members(chat_name)]
-        for chat_member in members_list:
-            user = chat_member.user
-            info = info_user(user)
-            if user.id not in chat_members:
-                info["count"] = 1
-                chat_members[user.id] = info
-            else:
-                chat_members[user.id]["count"] += 1
-    file_path = create_result_file(chat_members, chat_name)
-    return file_path
-
-
-async def start_parser_by_subscribes(
-    parsered_chats: typing.List[str],
-    api_id: int,
-    api_hash: str,
-    session_string: str,
-) -> typing.List[str]:
-    file_paths_list = []
-    for chat in parsered_chats:
-        chat_type = await get_type_chat(chat, api_id, api_hash, session_string)
-        if chat_type in [ChatType.GROUP, ChatType.SUPERGROUP]:
-            file_path = await parser_chat_members_by_subscribes(
-                chat, api_id, api_hash, session_string
-            )
-            file_paths_list.append(file_path)
-        else:
-            info_text = f"""
-            {chat} не является чатом, проверьте правильность ссылки, \
-            либо воспользуйтесь другой услугой
-            """
-            answer = {"error": textwrap.dedent(info_text).strip()}
-            file_path = create_result_file(answer, chat)
-            file_paths_list.append(file_path)
-    return file_paths_list
+async def members_parser(
+    client: Client,
+    parsed_chats: typing.List[str],
+) -> typing.List[dict]:
+    all_data = []
+    for parsed_chat in parsed_chats:
+        chat = await get_group_info(client, parsed_chat)
+        if chat.type not in [ChatType.GROUP, ChatType.SUPERGROUP]:
+            continue
+        chat_members = {
+            "title": chat.title,
+            "description": chat.description,
+            "username": chat.username,
+            "members": {
+                member.user.id: get_user_info(member.user)
+                async for member in client.get_chat_members(
+                    chat_id=parsed_chat,
+                )
+                if not member.user.is_bot
+            }
+        }
+        all_data.append(chat_members)
+    return all_data
 
 
 async def parser_chat_members_by_period(
@@ -137,7 +107,7 @@ async def parser_chat_members_by_period(
 
             for chat_member in members_list:
                 user = chat_member
-                info = info_user(user)
+                info = get_user_info(user)
                 if user.id not in chat_members:
                     info["count"] = 1
                     chat_members[user.id] = info
@@ -157,7 +127,7 @@ async def start_parser_by_period(
 ) -> typing.List[str]:
     file_paths_list = []
     for chat in parsered_chats:
-        chat_type = await get_type_chat(chat, api_id, api_hash, session_string)
+        chat_type = await get_group_info(chat, api_id, api_hash, session_string)
         if chat_type in [ChatType.GROUP, ChatType.SUPERGROUP]:
             file_path = await parser_chat_members_by_period(
                 chat, period_from, period_to, api_id, api_hash, session_string
@@ -197,7 +167,7 @@ async def parser_private_channel(
                 ]
                 for comment in discussion_replies:
                     if not comment.from_user.is_bot:
-                        info = info_user(comment.from_user)
+                        info = get_user_info(comment.from_user)
                         if comment.from_user.id not in chat_members:
                             info["count"] = 1
                             chat_members[comment.from_user.id] = info
@@ -223,7 +193,7 @@ async def start_parser_privat_chanels(
 ) -> typing.List[str]:
     file_paths_list = []
     for chat in parsered_chats:
-        chat_type = await get_type_chat(chat, api_id, api_hash, session_string)
+        chat_type = await get_group_info(chat, api_id, api_hash, session_string)
         if chat_type == ChatType.CHANNEL:
             file_path = await parser_private_channel(
                 chat, api_id, api_hash, session_string, limit
