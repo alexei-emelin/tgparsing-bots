@@ -1,20 +1,19 @@
 import datetime
 
 from fastapi import Query
+from pyrogram import Client
 
 import bot.parsing as ps
 from bot.bot import check_account_by_geo, check_account_on_block
 
 
-async def chat_members(
-    api_id: int,
-    api_hash: str,
+async def get_chat_members(
     session_string: str,
     parsered_chats: list = Query(),
-) -> list:
-    return await ps.start_parser_by_subscribes(
-        parsered_chats, api_id, api_hash, session_string
-    )
+) -> dict:
+    async with Client("account", session_string=session_string) as client:
+        members = await ps.members_parser(client, parsered_chats)
+    return members
 
 
 async def by_period_members(
