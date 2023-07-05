@@ -3,46 +3,48 @@ from fastapi import APIRouter
 from bot import views
 
 
-bot_router = APIRouter()
+parser_router = APIRouter(tags=["Parser"])
 
-bot_router.add_api_route(
+parser_router.add_api_route(
     "/members",
     endpoint=views.get_chat_members,
     methods=["GET"],
-    tags=["parsing"],
+    description="Получение пользователей из списка групп",
 )
-
-bot_router.add_api_route(
-    "/byperiodmembers",
-    endpoint=views.by_period_members,
-    methods=["GET"],
-    tags=["parsing"],
-)
-
-bot_router.add_api_route(
+parser_router.add_api_route(
     "/geomembers",
-    endpoint=views.geo_members,
+    endpoint=views.get_members_by_geo,
     methods=["GET"],
-    tags=["parsing"],
+    description="Получение пользователей по геолокации",
 )
-
-bot_router.add_api_route(
-    "/privatemembers",
-    endpoint=views.privat_members,
+parser_router.add_api_route(
+    "/chats",
+    endpoint=views.get_chats,
     methods=["GET"],
-    tags=["parsing"],
+    description="Получение групп по ключевому слову",
 )
-
-bot_router.add_api_route(
-    "/checkblock",
-    endpoint=views.check_block,
-    methods=["GET"],
-    tags=["check account"],
-)
-
-bot_router.add_api_route(
-    "/checkgeo",
-    endpoint=views.check_geo,
-    methods=["GET"],
-    tags=["check account"],
-)
+# parser_router.add_api_route(
+#     "/byperiodmembers",
+#     endpoint=views.by_period_members,
+#     methods=["GET"],
+#     tags=["parsing"],
+# )
+#
+# parser_router.add_api_route(
+#     "/privatemembers",
+#     endpoint=views.privat_members,
+#     methods=["GET"],
+#     tags=["parsing"],
+# )
+# parser_router.add_api_route(
+#     "/checkblock",
+#     endpoint=views.check_block,
+#     methods=["GET"],
+#     tags=["check account"],
+# )
+# parser_router.add_api_route(
+#     "/checkgeo",
+#     endpoint=views.check_geo,
+#     methods=["GET"],
+#     tags=["check account"],
+# )
