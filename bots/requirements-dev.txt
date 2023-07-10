@@ -9,3 +9,4 @@ python-dotenv==1.0.0
 types-aiofiles==23.1.0.4
 types-passlib==1.7.7.12
 types-python-jose==3.3.4.7
+types-pytz==2023.3.0.0

@@ -18,8 +18,14 @@ class Config(BaseSettings):
     API_HASH: str = Field(default="YourTelegramHash")
     PHONE_NUMBER: str = Field(default="+00000000000")
 
+    # limits
     # parser
     SEARCH_LIMIT: int = Field(default=1000)
+
+    # url names
+    # parser
+    PARSER_MEMBERS: str = Field(default="parser_members")
+    PARSER_ACTIVE_MEMBERS: str = Field(default="parser_active_members")
 
 
 config = Config()
