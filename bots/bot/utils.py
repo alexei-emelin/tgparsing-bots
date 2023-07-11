@@ -1,7 +1,23 @@
+from datetime import datetime
+from typing import List
+
+import fastapi as fa
 from pyrogram import Client, errors
 from pyrogram.enums import ChatType
 from pyrogram.raw import types
 from pyrogram.types import Chat, User
+from pytz import timezone
+
+
+async def prepare_date(
+    dates: List[datetime], request: fa.Request
+) -> List[datetime]:
+    new_list = []
+    for date in dates:
+        tzinfo = timezone(request.cookies["tz"])
+        new_date = date.astimezone(tzinfo).replace(microsecond=0, tzinfo=None)
+        new_list.append(new_date)
+    return new_list
 
 
 async def get_group_info(client: Client, chat: str) -> Chat | None:
