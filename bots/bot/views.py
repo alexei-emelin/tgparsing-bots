@@ -3,35 +3,29 @@ from pyrogram import Client
 
 import bot.parsing as ps
 from bot import schemas as bot_sh
-from bot.utils import prepare_date
 
 
 async def get_chat_members(
     body_data: bot_sh.PostBase,
-) -> list:
+) -> dict:
     async with Client(
         "account", session_string=body_data.session_string
     ) as client:
-        members = await ps.members_parser(client, body_data.parsed_chats)
+        members = await ps.members_parser(
+            client, body_data.parsed_chats, body_data.groups_count
+        )
     return members
 
 
-async def get_active_members(
-    body_data: bot_sh.GetActiveMembers,
-    request: fa.Request,
-) -> dict:
-    from_date, to_date = await prepare_date(
-        [body_data.from_date, body_data.to_date],
-        request,
-    )
+async def get_active_members(body_data: bot_sh.GetActiveMembers) -> dict:
     async with Client(
         "account", session_string=body_data.session_string
     ) as client:
-        members = await ps.get_active_members_from_channel(
+        members = await ps.get_active_members(
             client=client,
             parsed_chats=body_data.parsed_chats,
-            from_date=from_date,
-            to_date=to_date,
+            from_date=body_data.from_date,
+            to_date=body_data.to_date,
         )
     return members
 

@@ -1,47 +1,33 @@
+import asyncio
 from datetime import datetime
-from typing import List
+from typing import Dict
 
-import fastapi as fa
 from pyrogram import Client, errors
-from pyrogram.enums import ChatType
 from pyrogram.raw import types
-from pyrogram.types import Chat, User
-from pytz import timezone
+from pyrogram.types import Chat, ChatPreview, User
 
 
-async def prepare_date(
-    dates: List[datetime], request: fa.Request
-) -> List[datetime]:
-    new_list = []
-    for date in dates:
-        tzinfo = timezone(request.cookies["tz"])
-        new_date = date.astimezone(tzinfo).replace(microsecond=0, tzinfo=None)
-        new_list.append(new_date)
-    return new_list
-
-
-async def get_group_info(client: Client, chat: str) -> Chat | None:
+async def get_chat_info(client: Client, chat: str) -> Chat | None:
     try:
         chat_info = await client.get_chat(chat)
     except errors.UsernameNotOccupied:
         return None
-    if chat_info.type is not ChatType.CHANNEL:
+    if isinstance(chat_info, ChatPreview):
         return None
     return chat_info
 
 
-def get_member_info(user: User) -> dict:
-    info = {
-        "user_id": user.id,
+async def get_member_info(user: User) -> tuple:
+    user_info = {
         "first_name": user.first_name,
         "last_name": user.last_name,
         "username": user.username,
         "phone_number": user.phone_number,
     }
-    return info
+    return user.id, user_info
 
 
-def get_geomember_info(user: types.User) -> dict:
+async def get_geomember_info(user: types.User) -> dict:
     info = {
         "user_id": user.id,
         "first_name": user.first_name,
@@ -52,9 +38,45 @@ def get_geomember_info(user: types.User) -> dict:
     return info
 
 
-def get_chat_info(chat: types.Channel):
+async def get_chat_data(chat: types.Channel):
     info = {
         "title": chat.title,
         "username": chat.username,
     }
     return info
+
+
+async def get_commenting_members(
+    client: Client,
+    chat: Chat,
+    parsed_chat: str,
+    to_date: datetime,
+    from_date: datetime,
+):
+    history = client.get_chat_history(
+        chat_id=parsed_chat,
+        offset_date=to_date,
+    )
+    channel_users: Dict[int, dict] = {}
+    if not history:
+        return channel_users
+    async for item in history:
+        if item.date < from_date:
+            break
+        replies = client.get_discussion_replies(chat.id, item.id)
+        if not replies:
+            continue
+        try:
+            async for reply in replies:
+                user = reply.from_user
+                if not user or user.is_bot:
+                    continue
+                user_id, member_info = await get_member_info(user)
+                if user_id not in channel_users:
+                    member_info["groups"] = [f"t.me/{chat.username}"]
+                    channel_users.update({user_id: member_info})
+        except errors.MsgIdInvalid:
+            continue
+        except errors.FloodWait as exp:
+            await asyncio.sleep(exp.value + 1)
+    return channel_users

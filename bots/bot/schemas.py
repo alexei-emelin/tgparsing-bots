@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import List
 
 from pydantic import BaseModel, Field
@@ -14,18 +14,16 @@ class PostBase(BaseModel):
     parsed_chats: List[str] = Field(
         description="Список чатов для парсинга",
     )
+    groups_count: int
 
 
-class GetActiveMembers(PostBase):
-    days: int = Field(
-        ge=1,
-        description="Количество дней. Если указан данный параметр, "
-        "то период учитываться не будет",
+class GetActiveMembers(BaseModel):
+    session_string: str
+    parsed_chats: List[str] = Field(
+        description="Список чатов для парсинга",
     )
-    from_date: datetime = Field(
-        default=datetime.now().replace(microsecond=0) - timedelta(days=1)
-    )
-    to_date: datetime = Field(default=datetime.now().replace(microsecond=0))
+    from_date: datetime
+    to_date: datetime
 
 
 class GetByGeo(BaseModel):
@@ -33,3 +31,11 @@ class GetByGeo(BaseModel):
     latitude: float
     longitude: float
     accuracy_radius: int = Field(description="In meters")
+
+
+class MemberInfoResponse(BaseModel):
+    first_name: str | None
+    last_name: str | None
+    username: str | None
+    phone_number: str | None
+    groups: List[str]
