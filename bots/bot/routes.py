@@ -1,6 +1,9 @@
+from typing import Dict
+
 from fastapi import APIRouter
 
 from bot import views
+from bot.schemas import MemberInfoResponse
 from settings import config
 
 
@@ -11,6 +14,7 @@ parser_router.add_api_route(
     endpoint=views.get_chat_members,
     methods=["POST"],
     description="Получение пользователей из списка групп",
+    response_model=Dict[int, MemberInfoResponse],
 )
 parser_router.add_api_route(
     path="/activemembers",
