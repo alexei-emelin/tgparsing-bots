@@ -70,7 +70,7 @@ async def parser_by_geo(
     latitude: float,
     longitude: float,
     accuracy_radius: int,
-):
+) -> dict[int, dict]:
     resp_members = await client.invoke(
         functions.contacts.GetLocated(
             geo_point=types.InputGeoPoint(
@@ -80,11 +80,11 @@ async def parser_by_geo(
             self_expires=0x7FFFFFFF,
         )
     )
-    members = [
-        await ut.get_geomember_info(member)
-        for member in resp_members.users
-        if not member.bot
-    ]
+    members = {}
+    for member in resp_members.users:
+        user_id, user_data = await ut.get_geomember_info(member)
+        user_data["groups"] = []
+        members[user_id] = user_data
     return members
 
 
