@@ -127,25 +127,3 @@ async def parser_search_chats(
     )
     chats = [await ut.get_chat_data(item) for item in chats_resp.chats]
     return chats
-
-
-async def mass_get_by_geo(
-    client: Client,
-    coordinates: list[LatLotSchema],
-    accuracy_radius: int
-):
-    all_members = {}
-    for index, coordinate in enumerate(coordinates):
-        members = await parser_by_geo(
-            client,
-            coordinate.latitude,
-            coordinate.longitude,
-            accuracy_radius,
-        )
-        all_members.update(members)
-        if all([
-            len(coordinates) > 1,
-            index < len(coordinates) - 1
-        ]):
-            await asyncio.sleep(600)
-    return all_members

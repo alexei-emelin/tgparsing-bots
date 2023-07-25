@@ -7,6 +7,8 @@ from pyrogram import Client
 import bot.parsing as ps
 from bot import schemas as bot_sh
 
+import utils
+
 
 async def get_chat_members(body_data: bot_sh.PostBase) -> typing.Any:
     data = body_data.dict()
@@ -52,7 +54,7 @@ async def get_members_by_geo(
                     status_code=fa.status.HTTP_400_BAD_REQUEST,
                     detail="У аккаунта должна быть аватарка",
                 )
-            all_members = await ps.mass_get_by_geo(
+            all_members = await utils.mass_get_by_geo(
                 client, body_data.coordinates, body_data.accuracy_radius
             )
         return all_members

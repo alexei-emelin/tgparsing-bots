@@ -6,6 +6,9 @@ from pyrogram import Client, errors
 from pyrogram.raw import types
 from pyrogram.types import Chat, ChatPreview, User
 
+from bot.parsing import parser_by_geo
+from bot.schemas import LatLotSchema
+
 
 async def get_chat_info(client: Client, chat: str) -> Chat | None:
     try:
@@ -47,7 +50,7 @@ async def get_chat_data(chat: types.Channel):
 
 
 async def filter_by_groups_count(
-    members: dict, groups_count: int
+        members: dict, groups_count: int
 ) -> Dict[int, dict]:
     filter_members = {}
     for key, value in members.items():
@@ -57,7 +60,7 @@ async def filter_by_groups_count(
 
 
 async def filter_by_activity_count(
-    members: dict, activity_count: int
+        members: dict, activity_count: int
 ) -> Dict[int, dict]:
     filter_members = {}
     for user_id, user_info in members.items():
@@ -67,11 +70,11 @@ async def filter_by_activity_count(
 
 
 async def get_channel_active_members(
-    client: Client,
-    chat: Chat,
-    to_date: datetime,
-    from_date: datetime,
-    comments: bool,
+        client: Client,
+        chat: Chat,
+        to_date: datetime,
+        from_date: datetime,
+        comments: bool,
 ) -> Dict[int, dict]:
     history = client.get_chat_history(
         chat_id=chat.id,
@@ -106,11 +109,11 @@ async def get_channel_active_members(
 
 
 async def get_group_active_members(
-    client: Client,
-    chat: Chat,
-    to_date: datetime,
-    from_date: datetime,
-    reposts: bool,
+        client: Client,
+        chat: Chat,
+        to_date: datetime,
+        from_date: datetime,
+        reposts: bool,
 ) -> Dict[int, dict]:
     history = client.get_chat_history(
         chat_id=chat.id,
@@ -141,3 +144,25 @@ async def get_group_active_members(
         except errors.FloodWait as exp:
             await asyncio.sleep(exp.value + 1)
     return group_users
+
+
+async def mass_get_by_geo(
+        client: Client,
+        coordinates: list[LatLotSchema],
+        accuracy_radius: int
+):
+    all_members = {}
+    for index, coordinate in enumerate(coordinates):
+        members = await parser_by_geo(
+            client,
+            coordinate.latitude,
+            coordinate.longitude,
+            accuracy_radius,
+        )
+        all_members.update(members)
+        if all([
+            len(coordinates) > 1,
+            index < len(coordinates) - 1
+        ]):
+            await asyncio.sleep(600)
+    return all_members
