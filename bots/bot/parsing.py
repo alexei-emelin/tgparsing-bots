@@ -12,7 +12,7 @@ async def members_parser(
     client: Client,
     parsed_chats: typing.List[str],
     groups_count: int,
-) -> dict:
+) -> typing.Any:
     all_members: typing.Dict[int, dict] = {}
     for parsed_chat in parsed_chats:
         chat = await ut.get_chat_info(client, parsed_chat)
@@ -49,19 +49,46 @@ async def get_active_members(
     parsed_chats: typing.List[str],
     from_date: datetime,
     to_date: datetime,
+    activity_count: int,
+    activity: dict,
 ) -> dict:
-    all_users = {}
+    all_users: typing.Dict[int, dict] = {}
     for parsed_chat in parsed_chats:
         chat = await client.get_chat(parsed_chat)
-        if chat.type == enums.ChatType.CHANNEL:
-            members = await ut.get_commenting_members(
+        members = {}
+        if chat.type == enums.ChatType.CHANNEL and activity.get("comments"):
+            members = await ut.get_channel_active_members(
                 client=client,
                 chat=chat,
-                parsed_chat=parsed_chat,
                 from_date=from_date,
                 to_date=to_date,
+                comments=activity["comments"],
             )
-            all_users.update(members)
+        elif chat.type in [
+            enums.ChatType.GROUP, enums.ChatType.SUPERGROUP
+        ] and activity.get("reposts"):
+            members = await ut.get_group_active_members(
+                client=client,
+                chat=chat,  # type: ignore
+                from_date=from_date,
+                to_date=to_date,
+                reposts=activity["reposts"],
+            )
+        if not members:
+            continue
+        for user_id, user_info in members.items():
+            if user_id in all_users:
+                all_users[user_id]["activity_count"] += user_info[
+                    "activity_count"
+                ]
+                all_users[user_id]["groups"] += user_info["groups"]
+            else:
+                all_users.update({user_id: user_info})
+    if activity_count > 1:
+        return await ut.filter_by_activity_count(
+            members=all_users,
+            activity_count=activity_count,
+        )
     return all_users
 
 
@@ -70,7 +97,7 @@ async def parser_by_geo(
     latitude: float,
     longitude: float,
     accuracy_radius: int,
-):
+) -> dict[int, dict]:
     resp_members = await client.invoke(
         functions.contacts.GetLocated(
             geo_point=types.InputGeoPoint(
@@ -80,11 +107,11 @@ async def parser_by_geo(
             self_expires=0x7FFFFFFF,
         )
     )
-    members = [
-        await ut.get_geomember_info(member)
-        for member in resp_members.users
-        if not member.bot
-    ]
+    members = {}
+    for member in resp_members.users:
+        user_id, user_data = await ut.get_geomember_info(member)
+        user_data["groups"] = []
+        members[user_id] = user_data
     return members
 
 
