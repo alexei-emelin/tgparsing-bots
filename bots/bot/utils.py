@@ -3,11 +3,8 @@ from datetime import datetime
 from typing import Dict
 
 from pyrogram import Client, errors
-from pyrogram.raw import types
+from pyrogram.raw import functions, types
 from pyrogram.types import Chat, ChatPreview, User
-
-from bot.parsing import parser_by_geo
-from bot.schemas import LatLotSchema
 
 
 async def get_chat_info(client: Client, chat: str) -> Chat | None:
@@ -146,23 +143,24 @@ async def get_group_active_members(
     return group_users
 
 
-async def mass_get_by_geo(
-        client: Client,
-        coordinates: list[LatLotSchema],
-        accuracy_radius: int
-):
-    all_members = {}
-    for index, coordinate in enumerate(coordinates):
-        members = await parser_by_geo(
-            client,
-            coordinate.latitude,
-            coordinate.longitude,
-            accuracy_radius,
+async def parser_by_geo(
+    client: Client,
+    latitude: float,
+    longitude: float,
+    accuracy_radius: int,
+) -> dict[int, dict]:
+    resp_members = await client.invoke(
+        functions.contacts.GetLocated(
+            geo_point=types.InputGeoPoint(
+                lat=latitude, long=longitude, accuracy_radius=accuracy_radius
+            ),
+            background=False,
+            self_expires=0x7FFFFFFF,
         )
-        all_members.update(members)
-        if all([
-            len(coordinates) > 1,
-            index < len(coordinates) - 1
-        ]):
-            await asyncio.sleep(600)
-    return all_members
+    )
+    members = {}
+    for member in resp_members.users:
+        user_id, user_data = await get_geomember_info(member)
+        user_data["groups"] = []
+        members[user_id] = user_data
+    return members
