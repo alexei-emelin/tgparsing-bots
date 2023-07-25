@@ -33,10 +33,17 @@ class GetActiveMembers(BaseModel):
     activity: Activity
 
 
+class LatLotSchema(BaseModel):
+    latitude: float
+    longitude: float
+
+
 class GetByGeo(BaseModel):
     session_string: str
-    coordinates: List[List[float]] = Field(
-        description="Координаты внутри массива [[latitude, longitude],]"
+    coordinates: List[LatLotSchema] = Field(
+        description="Координаты внутри массива "
+                    "[{latitude: 0.0, longitude: 0.0}]",
+        min_items=1
     )
     accuracy_radius: int = Field(description="In meters")
 

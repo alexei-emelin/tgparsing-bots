@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Dict
 
 from pyrogram import Client, errors
-from pyrogram.raw import types
+from pyrogram.raw import functions, types
 from pyrogram.types import Chat, ChatPreview, User
 
 
@@ -47,7 +47,7 @@ async def get_chat_data(chat: types.Channel):
 
 
 async def filter_by_groups_count(
-    members: dict, groups_count: int
+        members: dict, groups_count: int
 ) -> Dict[int, dict]:
     filter_members = {}
     for key, value in members.items():
@@ -57,7 +57,7 @@ async def filter_by_groups_count(
 
 
 async def filter_by_activity_count(
-    members: dict, activity_count: int
+        members: dict, activity_count: int
 ) -> Dict[int, dict]:
     filter_members = {}
     for user_id, user_info in members.items():
@@ -67,11 +67,11 @@ async def filter_by_activity_count(
 
 
 async def get_channel_active_members(
-    client: Client,
-    chat: Chat,
-    to_date: datetime,
-    from_date: datetime,
-    comments: bool,
+        client: Client,
+        chat: Chat,
+        to_date: datetime,
+        from_date: datetime,
+        comments: bool,
 ) -> Dict[int, dict]:
     history = client.get_chat_history(
         chat_id=chat.id,
@@ -106,11 +106,11 @@ async def get_channel_active_members(
 
 
 async def get_group_active_members(
-    client: Client,
-    chat: Chat,
-    to_date: datetime,
-    from_date: datetime,
-    reposts: bool,
+        client: Client,
+        chat: Chat,
+        to_date: datetime,
+        from_date: datetime,
+        reposts: bool,
 ) -> Dict[int, dict]:
     history = client.get_chat_history(
         chat_id=chat.id,
@@ -141,3 +141,26 @@ async def get_group_active_members(
         except errors.FloodWait as exp:
             await asyncio.sleep(exp.value + 1)
     return group_users
+
+
+async def parser_by_geo(
+    client: Client,
+    latitude: float,
+    longitude: float,
+    accuracy_radius: int,
+) -> dict[int, dict]:
+    resp_members = await client.invoke(
+        functions.contacts.GetLocated(
+            geo_point=types.InputGeoPoint(
+                lat=latitude, long=longitude, accuracy_radius=accuracy_radius
+            ),
+            background=False,
+            self_expires=0x7FFFFFFF,
+        )
+    )
+    members = {}
+    for member in resp_members.users:
+        user_id, user_data = await get_geomember_info(member)
+        user_data["groups"] = []
+        members[user_id] = user_data
+    return members

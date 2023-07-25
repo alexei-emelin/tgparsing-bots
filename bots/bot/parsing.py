@@ -1,10 +1,12 @@
+import asyncio
 import typing
 from datetime import datetime
 
 from pyrogram import Client, enums
-from pyrogram.raw import functions, types
+from pyrogram.raw import functions
 
 from bot import utils as ut
+from bot.schemas import LatLotSchema
 from settings import config
 
 
@@ -93,27 +95,26 @@ async def get_active_members(
     return all_users
 
 
-async def parser_by_geo(
-    client: Client,
-    latitude: float,
-    longitude: float,
-    accuracy_radius: int,
-) -> dict[int, dict]:
-    resp_members = await client.invoke(
-        functions.contacts.GetLocated(
-            geo_point=types.InputGeoPoint(
-                lat=latitude, long=longitude, accuracy_radius=accuracy_radius
-            ),
-            background=False,
-            self_expires=0x7FFFFFFF,
+async def mass_get_by_geo(
+        client: Client,
+        coordinates: list[LatLotSchema],
+        accuracy_radius: int
+):
+    all_members = {}
+    for index, coordinate in enumerate(coordinates):
+        members = await ut.parser_by_geo(
+            client,
+            coordinate.latitude,
+            coordinate.longitude,
+            accuracy_radius,
         )
-    )
-    members = {}
-    for member in resp_members.users:
-        user_id, user_data = await ut.get_geomember_info(member)
-        user_data["groups"] = []
-        members[user_id] = user_data
-    return members
+        all_members.update(members)
+        if all([
+            len(coordinates) > 1,
+            index < len(coordinates) - 1
+        ]):
+            await asyncio.sleep(600)
+    return all_members
 
 
 async def parser_search_chats(
