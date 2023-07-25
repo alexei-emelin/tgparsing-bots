@@ -27,15 +27,14 @@ async def get_member_info(user: User) -> tuple:
     return user.id, user_info
 
 
-async def get_geomember_info(user: types.User) -> dict:
+async def get_geomember_info(user: types.User) -> tuple:
     info = {
-        "user_id": user.id,
         "first_name": user.first_name,
         "last_name": user.last_name,
         "username": user.username,
         "phone_number": user.phone,
     }
-    return info
+    return user.id, info
 
 
 async def get_chat_data(chat: types.Channel):

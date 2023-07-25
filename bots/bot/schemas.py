@@ -35,8 +35,9 @@ class GetActiveMembers(BaseModel):
 
 class GetByGeo(BaseModel):
     session_string: str
-    latitude: float
-    longitude: float
+    coordinates: List[List[float]] = (
+        Field(description="Координаты внутри массива [[latitude, longitude],]")
+    )
     accuracy_radius: int = Field(description="In meters")
 
 
