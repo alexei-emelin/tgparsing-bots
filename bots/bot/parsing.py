@@ -49,11 +49,13 @@ async def get_active_members(
     parsed_chats: typing.List[str],
     from_date: datetime,
     to_date: datetime,
+    activity_count: int,
+    activity: dict,
 ) -> dict:
     all_users = {}
     for parsed_chat in parsed_chats:
         chat = await client.get_chat(parsed_chat)
-        if chat.type == enums.ChatType.CHANNEL:
+        if chat.type == enums.ChatType.CHANNEL and activity.get("comments"):
             members = await ut.get_commenting_members(
                 client=client,
                 chat=chat,

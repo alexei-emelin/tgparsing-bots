@@ -17,6 +17,11 @@ class PostBase(BaseModel):
     groups_count: int
 
 
+class Activity(BaseModel):
+    comments: bool
+    reposts: bool
+
+
 class GetActiveMembers(BaseModel):
     session_string: str
     parsed_chats: List[str] = Field(
@@ -24,6 +29,8 @@ class GetActiveMembers(BaseModel):
     )
     from_date: datetime
     to_date: datetime
+    activity_count: int
+    activity: Activity
 
 
 class GetByGeo(BaseModel):
