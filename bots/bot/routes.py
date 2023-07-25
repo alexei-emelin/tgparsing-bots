@@ -23,12 +23,14 @@ parser_router.add_api_route(
     name=config.PARSER_ACTIVE_MEMBERS,
     description="Получить всех пользователей из списка групп, "
     "которые проявляли активность за определенный период",
+    response_model=Dict[int, MemberInfoResponse],
 )
 parser_router.add_api_route(
     "/geomembers",
     endpoint=views.get_members_by_geo,
     methods=["POST"],
     description="Получение пользователей по геолокации",
+    response_model=Dict[int, MemberInfoResponse],
 )
 parser_router.add_api_route(
     "/chats",
