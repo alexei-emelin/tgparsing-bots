@@ -29,7 +29,6 @@ parser_router.add_api_route(
     endpoint=views.get_members_by_geo,
     methods=["POST"],
     description="Получение пользователей по геолокации",
-    response_model=Dict[int, MemberInfoResponse],
 )
 parser_router.add_api_route(
     "/chats",
