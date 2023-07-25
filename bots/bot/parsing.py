@@ -12,7 +12,7 @@ async def members_parser(
     client: Client,
     parsed_chats: typing.List[str],
     groups_count: int,
-) -> dict:
+) -> typing.Any:
     all_members: typing.Dict[int, dict] = {}
     for parsed_chat in parsed_chats:
         chat = await ut.get_chat_info(client, parsed_chat)
@@ -52,18 +52,43 @@ async def get_active_members(
     activity_count: int,
     activity: dict,
 ) -> dict:
-    all_users = {}
+    all_users: typing.Dict[int, dict] = {}
     for parsed_chat in parsed_chats:
         chat = await client.get_chat(parsed_chat)
+        members = {}
         if chat.type == enums.ChatType.CHANNEL and activity.get("comments"):
-            members = await ut.get_commenting_members(
+            members = await ut.get_channel_active_members(
                 client=client,
                 chat=chat,
-                parsed_chat=parsed_chat,
                 from_date=from_date,
                 to_date=to_date,
+                comments=activity["comments"],
             )
-            all_users.update(members)
+        elif chat.type in [
+            enums.ChatType.GROUP, enums.ChatType.SUPERGROUP
+        ] and activity.get("reposts"):
+            members = await ut.get_group_active_members(
+                client=client,
+                chat=chat,  # type: ignore
+                from_date=from_date,
+                to_date=to_date,
+                reposts=activity["reposts"],
+            )
+        if not members:
+            continue
+        for user_id, user_info in members.items():
+            if user_id in all_users:
+                all_users[user_id]["activity_count"] += user_info[
+                    "activity_count"
+                ]
+                all_users[user_id]["groups"] += user_info["groups"]
+            else:
+                all_users.update({user_id: user_info})
+    if activity_count > 1:
+        return await ut.filter_by_activity_count(
+            members=all_users,
+            activity_count=activity_count,
+        )
     return all_users
 
 

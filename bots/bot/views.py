@@ -2,7 +2,6 @@ import asyncio
 import binascii
 import typing
 
-
 import fastapi as fa
 from pyrogram import Client
 
@@ -32,8 +31,7 @@ async def get_active_members(body_data: bot_sh.GetActiveMembers) -> dict:
         return members
     except binascii.Error as exc:
         raise fa.HTTPException(
-            status_code=fa.status.HTTP_409_CONFLICT,
-            detail=str(exc)
+            status_code=fa.status.HTTP_409_CONFLICT, detail=str(exc)
         )
 
 
@@ -55,7 +53,7 @@ async def get_members_by_geo(
                 raise fa.HTTPException(
                     status_code=fa.status.HTTP_400_BAD_REQUEST,
                     detail="Координаты не соответствуют формату "
-                           "[latitude, longitude]"
+                    "[latitude, longitude]",
                 )
             latitude, longitude = coordinates
             members = await ps.parser_by_geo(
