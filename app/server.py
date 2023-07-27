@@ -1,7 +1,6 @@
+from bot.routes import parser_router
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-from bot.routes import parser_router
 
 
 app = FastAPI(title="TgBots")
