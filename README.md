@@ -21,7 +21,7 @@ git clone git@github.com:CrowMEV/tgparsing-bots.git tgparsing-bots
 cd tgparsing-bots
 python3 -m venv .venv
 source .venv/bin/activate
-pip install poetry
+pip install --upgrade pip -r requirements.txt
 poetry install
 
 ```
@@ -29,7 +29,6 @@ poetry install
 
 Установка хуков
 ```bash
-pip install pre-commit
 pre-commit install
 ```
 ### Запуск docker compose с базой для разработки
