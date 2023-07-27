@@ -1,0 +1,44 @@
+[tool.poetry]
+name = "tgparsing"
+version = "0.1.0"
+description = ""
+authors = ["Evgeny Malikov <evgeny.m3v@yandex.ru>, Igor Sverchkov <knjaz1989@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.10,<4.0.0"
+fastapi = "^0.100.0"
+uvicorn = {extras = ["standart"], version = "^0.23.1"}
+pyrogram = "^2.0.106"
+tgcrypto = "^1.2.5"
+pydantic = "^1"
+
+
+[tool.poetry.group.dev.dependencies]
+pylint = "^2.17.5"
+black = "^23.7.0"
+isort = "^5.12.0"
+mypy = "^1.4.1"
+python-dotenv = "^1.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+# black
+[tool.black]
+line-length = 79
+
+# isort
+[tool.isort]
+profile = "black"
+line_length = 79
+lines_after_imports = 2
+
+[tool.pylint]
+ignore = [".git", "__pycache__", ".venv"]
+extension-pkg-whitelist = ["pydantic"]
+max-args = 8
+max-line-length = 79
+disable = ["C0114", "C0115", "C0116", "W1514", "W3101", "R0903"]
+

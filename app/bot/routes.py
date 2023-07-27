@@ -1,9 +1,8 @@
 from typing import Dict
 
-from fastapi import APIRouter
-
 from bot import views
 from bot.schemas import MemberInfoResponse
+from fastapi import APIRouter
 from settings import config
 
 

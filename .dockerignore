@@ -2,6 +2,7 @@
 .git
 .gitignore
 .gitattributes
+.github
 
 # Docker
 docker-compose.yml
@@ -19,10 +20,19 @@ Dockerfile
 .env
 .venv/
 venv/
-venv-bots
 
 # PyCharm
 .idea
 
 # VS Code
 .vscode/
+
+# Tests
+**/.pytest_cache/
+**/tests/
+
+
+# Files
+.pre-commit-config.yaml
+env.example
+app/

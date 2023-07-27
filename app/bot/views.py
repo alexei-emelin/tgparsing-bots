@@ -1,11 +1,10 @@
 import binascii
 import typing
 
-import fastapi as fa
-from pyrogram import Client
-
 import bot.parsing as ps
+import fastapi as fa
 from bot import schemas as bot_sh
+from pyrogram import Client
 
 
 async def get_chat_members(body_data: bot_sh.PostBase) -> typing.Any:

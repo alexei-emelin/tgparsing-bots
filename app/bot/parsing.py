@@ -2,11 +2,10 @@ import asyncio
 import typing
 from datetime import datetime
 
-from pyrogram import Client, enums
-from pyrogram.raw import functions
-
 from bot import utils as ut
 from bot.schemas import LatLotSchema
+from pyrogram import Client, enums
+from pyrogram.raw import functions
 from settings import config
 
 
@@ -96,9 +95,7 @@ async def get_active_members(
 
 
 async def mass_get_by_geo(
-        client: Client,
-        coordinates: list[LatLotSchema],
-        accuracy_radius: int
+    client: Client, coordinates: list[LatLotSchema], accuracy_radius: int
 ):
     all_members = {}
     for index, coordinate in enumerate(coordinates):
@@ -109,10 +106,7 @@ async def mass_get_by_geo(
             accuracy_radius,
         )
         all_members.update(members)
-        if all([
-            len(coordinates) > 1,
-            index < len(coordinates) - 1
-        ]):
+        if all([len(coordinates) > 1, index < len(coordinates) - 1]):
             await asyncio.sleep(600)
     return all_members
 
