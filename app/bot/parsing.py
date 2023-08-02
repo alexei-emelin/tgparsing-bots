@@ -107,7 +107,7 @@ async def mass_get_by_geo(
         )
         all_members.update(members)
         if all([len(coordinates) > 1, index < len(coordinates) - 1]):
-            await asyncio.sleep(600)
+            await asyncio.sleep(602)
     return all_members
 
 

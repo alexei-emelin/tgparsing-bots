@@ -46,11 +46,6 @@ async def get_members_by_geo(
         async with Client(
             "account", session_string=body_data.session_string
         ) as client:
-            if not client.me.photo:
-                raise fa.HTTPException(
-                    status_code=fa.status.HTTP_400_BAD_REQUEST,
-                    detail="У аккаунта должна быть аватарка",
-                )
             all_members = await ps.mass_get_by_geo(
                 client, body_data.coordinates, body_data.accuracy_radius
             )
