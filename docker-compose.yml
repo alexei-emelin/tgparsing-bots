@@ -8,4 +8,4 @@ services:
     restart: always
     volumes:
       - ./app:/app/
-    entrypoint: [ "/bin/sh", "bots.sh" ]
+    entrypoint: [ "/bin/sh", "run.sh" ]
