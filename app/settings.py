@@ -12,6 +12,7 @@ class Config(BaseSettings):
     HOST: str = Field(default="0.0.0.0")
     PORT: int = Field(default=8000)
     DEBUG: bool = Field(default=True)
+    ALLOWED_HOST: str = Field(default=None)
 
     APP_NAME: str = "TgBots"
     APP_ALLOWED_ORIGINS: typing.List[str] = Field(default=["*"])

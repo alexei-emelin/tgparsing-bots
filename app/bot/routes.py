@@ -1,12 +1,13 @@
 from typing import Dict
 
 from bot import views
+from bot.depedencies import check_ip
 from bot.schemas import MemberInfoResponse
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from settings import config
 
 
-parser_router = APIRouter(tags=["Parser"])
+parser_router = APIRouter(tags=["Parser"], dependencies=[Depends(check_ip)])
 
 parser_router.add_api_route(
     "/members",
