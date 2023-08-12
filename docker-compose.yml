@@ -8,4 +8,6 @@ services:
     restart: always
     volumes:
       - ./app:/app/
-    entrypoint: [ "/bin/sh", "run.sh" ]
+    env_file:
+      - .env
+    entrypoint: ["/bin/sh", "run.sh"]

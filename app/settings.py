@@ -1,3 +1,5 @@
+import typing
+
 from pydantic import BaseSettings, Field
 
 
@@ -11,7 +13,11 @@ class Config(BaseSettings):
     PORT: int = Field(default=8000)
     DEBUG: bool = Field(default=True)
 
-    UPLOADED_FILES_PATH = "media/"
+    APP_NAME: str = "TgBots"
+    APP_ALLOWED_ORIGINS: typing.List[str] = Field(default=["*"])
+    APP_ALLOWED_HOSTS: typing.List[str] = Field(default=["*"])
+    DOCS_URL: typing.Optional[str] = Field(default=None)
+    REDOC_URL: typing.Optional[str] = Field(default=None)
 
     # tg
     API_ID: int = Field(default=0000)
