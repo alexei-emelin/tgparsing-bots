@@ -1,5 +1,4 @@
-import fastapi
-from fastapi import Request
+from fastapi import HTTPException, Request, status
 from settings import config
 
 
@@ -8,7 +7,7 @@ def check_ip(request: Request):
         host = request.client.host
         if host == config.ALLOWED_HOST:
             return
-    raise fastapi.HTTPException(
-        status_code=fastapi.status.HTTP_400_BAD_REQUEST,
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
         detail="Фи пароли, мазафака!",
     )
