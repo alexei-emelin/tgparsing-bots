@@ -97,6 +97,7 @@ async def get_active_members(
 async def mass_get_by_geo(
     client: Client, coordinates: list[LatLotSchema], accuracy_radius: int
 ):
+    await ut.check_bot_photo(client)
     all_members = {}
     for index, coordinate in enumerate(coordinates):
         members = await ut.parser_by_geo(

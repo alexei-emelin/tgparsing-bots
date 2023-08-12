@@ -5,6 +5,7 @@ from typing import Dict
 from pyrogram import Client, errors
 from pyrogram.raw import functions, types
 from pyrogram.types import Chat, ChatPreview, User
+from settings import config
 
 
 async def get_chat_info(client: Client, chat: str) -> Chat | None:
@@ -36,6 +37,14 @@ async def get_geomember_info(user: types.User) -> tuple:
         "phone_number": user.phone,
     }
     return user.id, info
+
+
+async def check_bot_photo(client: Client) -> User:
+    photo = str(config.base_avatar_url)
+    bot = await client.get_me()
+    if not bot.photo:
+        await client.set_profile_photo(photo=photo)
+    return bot
 
 
 async def get_chat_data(chat: types.Channel):
